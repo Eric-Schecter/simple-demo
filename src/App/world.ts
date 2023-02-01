@@ -1,7 +1,7 @@
 import {
   Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera, TextureLoader,Color,
   MeshPhongMaterial, Vector2, Group, RepeatWrapping, Raycaster, Object3D, Material, MeshStandardMaterial, BufferGeometry, BufferAttribute,
-   Box3, Vector3, AmbientLight, SpotLight
+   Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {STLLoader} from 'three/examples/jsm/loaders/STLLoader';
@@ -32,6 +32,7 @@ export class World {
       logarithmicDepthBuffer: true 
     });
     this.renderer.shadowMap.enabled = true;
+    this.renderer.outputEncoding = sRGBEncoding;
     this.renderer.setPixelRatio(window.devicePixelRatio || 1);
     this.renderer.setSize(width, height);
     this.renderer.setClearColor('black')
