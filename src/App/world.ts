@@ -29,6 +29,7 @@ export class World {
     const { offsetWidth: width, offsetHeight: height } = container;
     this.renderer = new WebGLRenderer({
       antialias: true,
+      logarithmicDepthBuffer: true 
     });
     this.renderer.shadowMap.enabled = true;
     this.renderer.setPixelRatio(window.devicePixelRatio || 1);
