@@ -1,5 +1,5 @@
 ## About The Project
-Model Customizer based on Threejs.  
+A simple demo.  
 
 ## Run Online   
 [https://threejs-simple-demo.netlify.app/](https://threejs-simple-demo.netlify.app/) 
