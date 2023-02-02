@@ -1,13 +1,13 @@
 import {
   Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera, TextureLoader,Color,
-  MeshPhongMaterial, Vector2, Group, RepeatWrapping, Raycaster, Object3D, Material, MeshStandardMaterial, BufferGeometry, BufferAttribute,
+  MeshPhongMaterial, Vector2, Group, Raycaster, Object3D, Material, MeshStandardMaterial, BufferGeometry, BufferAttribute,
    Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {STLLoader} from 'three/examples/jsm/loaders/STLLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as occtimportjs from 'occt-import-js';
-import { Mode } from './types';
+import { Model,Selection } from './types';
 
 export class World {
   private scene: Scene;
@@ -91,7 +91,7 @@ export class World {
       group.translateY(vec.y);
       group.translateX(-vec.z);
       group.scale.multiplyScalar(2);
-      group.name = Mode.STP.toString();
+      group.name = Model.STP.toString();
       this.intersectableObjs.add(group);
       this.isLocked = false;
     })
@@ -105,7 +105,7 @@ export class World {
         mesh.receiveShadow = true;
         this.rescale(mesh);
         mesh.position.y +=0.5;
-        mesh.name = Mode.STL.toString();
+        mesh.name = Model.STL.toString();
         this.intersectableObjs.add(mesh)
       })
       .catch(error=>console.log(error))
@@ -120,7 +120,7 @@ export class World {
         })
         this.rescale(obj.scene);
         obj.scene.rotateY(Math.PI);
-        obj.scene.name = Mode.GLB.toString();
+        obj.scene.name = Model.GLB.toString();
         this.intersectableObjs.add(obj.scene);
       })
       .catch(error => console.log(error))
@@ -155,7 +155,7 @@ export class World {
     lights.add(ambientLight, keyLight, fillLight, backLight);
     this.scene.add(lights);
   }
-  private clearScene = (mode:Mode) => {
+  private clearScene = (mode:Model) => {
     let res = false;
     this.intersectableObjs.children.forEach(obj=>{
       if(obj.name!==mode.toString()){
@@ -167,7 +167,7 @@ export class World {
     })
     return res;
   }
-  public loadModel = (mode:Mode) =>{
+  public loadModel = (mode:Model) =>{
     if(this.isLocked){
       console.log('model is loading')
       return;
@@ -175,36 +175,17 @@ export class World {
     const res = this.clearScene(mode);
     if(!res){
       switch(mode){
-        case Mode.GLB:{this.loadModelGLB('models/chair.glb');break;}
-        case Mode.STL:{this.loadModelSTL('models/7-PMI.stl');break;}
-        case Mode.STP:{this.loadModelSTP('models/1_7M.stp');break;}
+        case Model.GLB:{this.loadModelGLB('models/chair.glb');break;}
+        case Model.STL:{this.loadModelSTL('models/7-PMI.stl');break;}
+        case Model.STP:{this.loadModelSTP('models/1_7M.stp');break;}
         default:{
           console.log('something wrong happened');
         }
       }
     }
   }
-  public updateTexture = (url: string) => {
-    this.texLoader.loadAsync(url)
-      .then(texture => {
-        texture.wrapS = RepeatWrapping;
-        texture.wrapT = RepeatWrapping;
-
-        let isUpated = false;
-        this.target?.traverse(obj => {
-          if (obj instanceof Mesh) {
-            if (!isUpated) {
-              this.tempMaterial = new MeshPhongMaterial({
-                map: texture,
-              });
-              isUpated = true;
-            }
-            obj.material = new MeshPhongMaterial({
-              map: texture,
-            })
-          }
-        })
-      })
+  public changeSelectionMode = (mode:Selection) =>{
+    
   }
   public draw = () => {
     this.control.update();

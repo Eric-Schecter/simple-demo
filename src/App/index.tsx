@@ -1,41 +1,20 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { Options } from './components/options';
 import styles from './index.module.scss';
-import { Mode } from './types';
+import { Model,Selection } from './types';
 import { World } from './world';
 
-type Props = {
-  world?: World;
-}
+const optionsModel = [
+  {id:Model.GLB,name:'GLB'},
+  {id:Model.STL,name:'STL'},
+  {id:Model.STP,name:'STP'}
+];
 
-const options = [{id:Mode.GLB,name:'GLB'},{id:Mode.STL,name:'STL'},{id:Mode.STP,name:'STP'}];
-
-const Options = ({ world }: Props) => {
-  const [selected,setSelected] = useState<Mode>(0);
-  useEffect(()=>{
-    if(!world){
-      return;
-    }
-    world.loadModel(selected);
-  },[world,selected])
-  const click = (id:Mode) =>{
-    if(!world){
-      return;
-    }
-    setSelected(id);
-  }
-
-  return <div className={styles.options}>
-    {options.map(({id,name}) =>
-      <div
-        key={id}
-        className={`${styles.option} ${selected === id ? styles.isSelected : null}`}
-        onClick = {()=>click(id)}
-      >
-        {name}
-        </div>
-    )}
-  </div>
-}
+const optionsSelection = [
+  {id:Selection.FACE,name:'FACE'},
+  {id:Selection.LINE,name:'LINE'},
+  {id:Selection.POINT,name:'POINT'}
+];
 
 export const App = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -61,6 +40,15 @@ export const App = () => {
       onClick={() => world?.click()}
       onMouseMove={e => world?.mousemove(e)}
     />
-    <Options world={world} />
+    <Options 
+      cb={(id:number)=>world?.loadModel(id)} 
+      customStyles={styles.optionsModel}
+      options={optionsModel}
+    />
+    <Options 
+      cb={(id:number)=>world?.changeSelectionMode(id)} 
+      customStyles={styles.optionsSelectionMode}
+      options={optionsSelection}
+    />
   </div>
 }
