@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Options } from './components/options';
 import styles from './index.module.scss';
-import { Model, Selection } from './types';
+import { Model, Render, Selection } from './types';
 import { World } from './world';
 
 const optionsModel = [
@@ -15,6 +15,11 @@ const optionsSelection = [
   { id: Selection.FACE, name: 'FACE' },
   { id: Selection.LINE, name: 'LINE' },
   { id: Selection.POINT, name: 'POINT' }
+];
+
+const optionsRender = [
+  { id: Render.STD, name: 'STD' },
+  { id: Render.WIRE, name: 'WIRE' },
 ];
 
 export const App = () => {
@@ -50,6 +55,11 @@ export const App = () => {
       cb={(id: number) => world?.changeSelectionMode(id)}
       customStyles={styles.optionsSelectionMode}
       options={optionsSelection}
+    />
+    <Options
+      cb={(id: number) => world?.changeRenderMode(id)}
+      customStyles={styles.optionsRenderMode}
+      options={optionsRender}
     />
   </div>
 }

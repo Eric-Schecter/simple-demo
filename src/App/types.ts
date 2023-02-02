@@ -10,3 +10,8 @@ export enum Selection {
   LINE,
   POINT
 }
+
+export enum Render {
+  STD,
+  WIRE,
+}
