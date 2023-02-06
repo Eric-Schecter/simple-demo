@@ -1,13 +1,14 @@
 import {
   Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera, TextureLoader, Color,
   MeshPhongMaterial, Vector2, Group, Raycaster, Object3D, Material, MeshStandardMaterial, BufferGeometry, BufferAttribute,
-  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, SphereBufferGeometry, Intersection, Face, 
+  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, SphereBufferGeometry, Intersection, Face, Clock, 
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as occtimportjs from 'occt-import-js';
-import { Model, Render, Selection } from './types';
+import { Model, Render, Selection } from '../types';
+import { InputSystem } from './inputSystem';
 
 export class World {
   private scene: Scene;
@@ -30,6 +31,8 @@ export class World {
   private selectedFace:Mesh;
   private selectionMode: Selection = Selection.MESH;
   private renderMode: Render = Render.STD;
+  private inputSystem?:InputSystem;
+  private clock = new Clock();
   constructor(container: HTMLDivElement) {
     const { offsetWidth: width, offsetHeight: height } = container;
     this.renderer = new WebGLRenderer({
@@ -153,6 +156,23 @@ export class World {
       .catch(error => console.log(error))
       .finally(() => this.isLocked = false);
   }
+  private loadModelGLBwithAnimation = (url:string) =>{
+    this.gltfLoader.loadAsync(url)
+    .then(obj => {
+      obj.scene.traverse(o => {
+        o.castShadow = true;
+        o.receiveShadow = true;
+        this.setRenderMode(o);
+      })
+      this.rescale(obj.scene);
+      obj.scene.name = Model.GLB.toString();
+      this.inputSystem = new InputSystem(obj,this.control);
+      this.intersectableObjs.add(obj.scene);
+    })
+    .catch(error => console.log(error))
+    .finally(() => this.isLocked = false);
+
+  }
   private initObjs = () => {
     const planeGeo = new PlaneBufferGeometry(1000, 1000);
     const planeMat = new MeshPhongMaterial({ color: 0xdddddd });
@@ -224,6 +244,7 @@ export class World {
     const res = this.clearScene(mode);
     if (!res) {
       switch (mode) {
+        case Model.ANIMATION:{ this.loadModelGLBwithAnimation('models/RobotExpressive/RobotExpressive.glb'); break; }
         case Model.GLB: { this.loadModelGLB('models/chair.glb'); break; }
         case Model.STL: { this.loadModelSTL('models/7-PMI.stl'); break; }
         case Model.STP: { this.loadModelSTP('models/1_7M.stp'); break; }
@@ -248,6 +269,7 @@ export class World {
   }
   public draw = () => {
     this.control.update();
+    this.inputSystem?.update(this.clock.getDelta());
     this.renderer.render(this.scene, this.camera);
     this.timer = requestAnimationFrame(this.draw);
   }
@@ -330,5 +352,6 @@ export class World {
   }
   public dispose = () => {
     cancelAnimationFrame(this.timer);
+    this.inputSystem?.dispose();
   }
 }

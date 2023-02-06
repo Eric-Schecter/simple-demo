@@ -1,4 +1,5 @@
 export enum Model {
+  ANIMATION,
   GLB,
   STL,
   STP

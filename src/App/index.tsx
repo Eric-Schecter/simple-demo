@@ -5,6 +5,7 @@ import { Model, Render, Selection } from './types';
 import { World } from './world';
 
 const optionsModel = [
+  { id: Model.ANIMATION, name: 'GLB+A' },
   { id: Model.GLB, name: 'GLB' },
   { id: Model.STL, name: 'STL' },
   { id: Model.STP, name: 'STP' }
