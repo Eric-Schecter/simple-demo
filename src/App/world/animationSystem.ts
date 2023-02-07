@@ -39,7 +39,7 @@ export class AnimationSystem {
     ThumbsUp: 3
   }
   public isRunmode = false;
-  private epsilon = 0.0000001;
+  private epsilon = 0.000001;
   private isLocked = false;
   constructor(gltf: GLTF) {
     this.mixer = new AnimationMixer(gltf.scene);
