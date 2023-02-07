@@ -1,7 +1,7 @@
 import {
-  Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera, TextureLoader,
-  MeshPhongMaterial, Vector2, Group, Raycaster, Object3D, Material, MeshStandardMaterial, BufferGeometry, BufferAttribute,
-  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, SphereBufferGeometry, Intersection, Face, Clock, ShaderMaterial, Color,
+  Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera,
+  MeshPhongMaterial, Vector2, Group, Raycaster, Object3D, MeshStandardMaterial, BufferGeometry, BufferAttribute,
+  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, Clock, ShaderMaterial, Color,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
@@ -11,6 +11,7 @@ import { Model, Render, Selection } from '../types';
 import { InputSystem } from './inputSystem';
 import vertexShader from './shaders/line.vs';
 import fragmentShader from './shaders/line.fs';
+import {SelectionSystem} from './selectionSystem';
 import Stats from 'stats.js';
 
 export class World {
@@ -19,24 +20,17 @@ export class World {
   private camera: PerspectiveCamera;
   private timer = 0;
   private renderer: WebGLRenderer;
-  private texLoader = new TextureLoader();
   private gltfLoader = new GLTFLoader();
   private stlLoader = new STLLoader();
   private control: OrbitControls;
   private raycaster = new Raycaster();
   private mouse = new Vector2();
-  private target: Object3D | null = null;
   private isLocked = false;
-  private tempMaterial: Material | null = null;
-  private selectedMaterial = new MeshPhongMaterial({ color: 0xff0000, transparent: true, opacity: 0.5 });
-  private selectedPoint: Mesh;
-  // private selectedLine:Mesh;
-  private selectedFace: Mesh;
-  private selectionMode: Selection = Selection.MESH;
   private renderMode: Render = Render.STD;
   private inputSystem?: InputSystem;
   private clock = new Clock();
   private stats = new Stats();
+  private selectionSystem:SelectionSystem;
   constructor(container: HTMLDivElement) {
     const { offsetWidth: width, offsetHeight: height } = container;
     this.renderer = new WebGLRenderer({
@@ -57,9 +51,8 @@ export class World {
     this.control = this.initControl();
     this.initLights();
     this.initObjs();
-    this.selectedPoint = this.initSelectionPoint();
-    // this.selectedLine = this.initSelectionLine();
-    this.selectedFace = this.initSelectionFace();
+
+    this.selectionSystem = new SelectionSystem(this.scene);
 
     this.addStats(container);
   }
@@ -91,7 +84,6 @@ export class World {
     group.scale.multiplyScalar(1 / scaleRatio);
     return vec;
   }
-  // current just consider wiether is wireframe or not
   private setRenderMode = (o: Object3D) => {
     if (o instanceof Mesh && o.material instanceof MeshStandardMaterial) {
       switch (this.renderMode) {
@@ -105,6 +97,8 @@ export class World {
         }
         default: { }
       }
+    }else if(o instanceof Mesh && o.material instanceof ShaderMaterial && this.renderMode === Render.WIREShader){
+      
     }
   }
   private loadModelSTP = (url: string) => {
@@ -113,7 +107,7 @@ export class World {
       const buffer = await response.arrayBuffer();
       const fileBuffer = new Uint8Array(buffer);
       const result = occt.ReadStepFile(fileBuffer, null);
-      const meshes = result.meshes.map((data: any) => {
+      const standardMeshes = result.meshes.map((data: any) => {
         const geometry = new BufferGeometry();
         geometry.setAttribute('position', new BufferAttribute(new Float32Array(data.attributes.position.array), 3));
         geometry.setAttribute('normal', new BufferAttribute(new Float32Array(data.attributes.normal.array), 3));
@@ -123,53 +117,57 @@ export class World {
         mesh.castShadow = true;
         this.setRenderMode(mesh);
         return mesh;
-
-        // const geometry = new BufferGeometry();
-        // const nonIndexed: {
-        //   position: number[],
-        //   normal: number[],
-        //   barycentric: number[],
-        // } = {
-        //   position: [],
-        //   normal: [],
-        //   barycentric: [],
-        // }
-        // const positionArray = data.attributes.position.array;
-        // const normalArray = data.attributes.normal.array;
-        // for (let i = 0; i < data.index.array.length; i++) {
-        //   const index = data.index.array[i];
-        //   nonIndexed.position.push(positionArray[index * 3], positionArray[index * 3 + 1], positionArray[index * 3 + 2]);
-        //   nonIndexed.normal.push(normalArray[index * 3], normalArray[index * 3 + 1], normalArray[index * 3 + 2]);
-        // }
-        // let i = 0;
-        // let k = 0;
-        // while (i < nonIndexed.position.length) {
-        //   nonIndexed.barycentric.push(k % 3 === 0 ? 1 : 0, k % 3 === 1 ? 1 : 0, k % 3 === 2 ? 1 : 0);
-        //   i += 3;
-        //   k++;
-        // }
-        // geometry.setAttribute('position', new BufferAttribute(new Float32Array(nonIndexed.position), 3));
-        // geometry.setAttribute('normal', new BufferAttribute(new Float32Array(nonIndexed.normal), 3));
-        // geometry.setAttribute('barycentric', new BufferAttribute(new Float32Array(nonIndexed.barycentric), 3));
-        // // geometry.setIndex(new BufferAttribute(new Uint16Array(data.index.array), 1));
-        // // const material = new MeshStandardMaterial({ color: new Color(data.color[0], data.color[1], data.color[2]) });
-        // const material = new ShaderMaterial({
-        //   vertexShader,
-        //   fragmentShader,
-        //   uniforms: {
-        //     u_lineColor: { value: new Vector3(data.color[0], data.color[1], data.color[2]) },
-        //     u_lineWidth: { value: 1 },
-        //   },
-        //   depthTest: true,
-        //   transparent: true,
-        // })
-        // const mesh = new Mesh(geometry, material);
-        // mesh.castShadow = true;
-        // // this.setRenderMode(mesh);
-        // return mesh;
       })
+      const standardGroup = new Group();
+      standardGroup.add(...standardMeshes);
+
+      const customshaderMeshes = result.meshes.map((data: any) => {
+        const geometry = new BufferGeometry();
+        const nonIndexed: {
+          position: number[],
+          normal: number[],
+          barycentric: number[],
+        } = {
+          position: [],
+          normal: [],
+          barycentric: [],
+        }
+        const positionArray = data.attributes.position.array;
+        const normalArray = data.attributes.normal.array;
+        for (let i = 0; i < data.index.array.length; i++) {
+          const index = data.index.array[i];
+          nonIndexed.position.push(positionArray[index * 3], positionArray[index * 3 + 1], positionArray[index * 3 + 2]);
+          nonIndexed.normal.push(normalArray[index * 3], normalArray[index * 3 + 1], normalArray[index * 3 + 2]);
+        }
+        let i = 0;
+        let k = 0;
+        while (i < nonIndexed.position.length) {
+          nonIndexed.barycentric.push(k % 3 === 0 ? 1 : 0, k % 3 === 1 ? 1 : 0, k % 3 === 2 ? 1 : 0);
+          i += 3;
+          k++;
+        }
+        geometry.setAttribute('position', new BufferAttribute(new Float32Array(nonIndexed.position), 3));
+        geometry.setAttribute('normal', new BufferAttribute(new Float32Array(nonIndexed.normal), 3));
+        geometry.setAttribute('barycentric', new BufferAttribute(new Float32Array(nonIndexed.barycentric), 3));
+        const material = new ShaderMaterial({
+          vertexShader,
+          fragmentShader,
+          uniforms: {
+            u_lineColor: { value: new Vector3(data.color[0], data.color[1], data.color[2]) },
+            u_lineWidth: { value: 1 },
+          },
+          depthTest: true,
+          transparent: true,
+        })
+        const mesh = new Mesh(geometry, material);
+        mesh.castShadow = true;
+        return mesh;
+      })
+      const customshaderGroup = new Group();
+      customshaderGroup.add(...customshaderMeshes);
+
       const group = new Group();
-      group.add(...meshes);
+      group.add(standardGroup);
       const vec = this.rescale(group);
       group.translateY(vec.y);
       group.translateX(-vec.z);
@@ -227,7 +225,6 @@ export class World {
       })
       .catch(error => console.log(error))
       .finally(() => this.isLocked = false);
-
   }
   private initObjs = () => {
     const planeGeo = new PlaneBufferGeometry(1000, 1000);
@@ -236,28 +233,6 @@ export class World {
     plane.rotateX(-Math.PI / 2);
     plane.receiveShadow = true;
     this.scene.add(plane);
-  }
-  private initSelectionPoint = () => {
-    const geo = new SphereBufferGeometry();
-    const mesh = new Mesh(geo, this.selectedMaterial);
-    mesh.scale.setScalar(0.02);
-    mesh.visible = false;
-    this.scene.add(mesh);
-    return mesh;
-  }
-  // private initSelectionLine = () =>{
-  //   const geo = new SphereBufferGeometry();
-  //   const mesh = new Mesh(geo,this.selectedMaterial);
-  //   mesh.scale.setScalar(0.05);
-  //   this.scene.add(mesh);
-  //   return mesh;
-  // }
-  private initSelectionFace = () => {
-    const geo = new BufferGeometry();
-    const mesh = new Mesh(geo, this.selectedMaterial);
-    mesh.visible = false;
-    this.scene.add(mesh);
-    return mesh;
   }
   private initSpotLight = (x: number, y: number, z: number, intensity: number) => {
     const light = new SpotLight('white', intensity);
@@ -311,10 +286,10 @@ export class World {
     }
   }
   public changeSelectionMode = (mode: Selection) => {
-    this.selectionMode = mode;
+    this.selectionSystem.selectionMode = mode;
   }
   public changeRenderMode = (mode: Render) => {
-    this.initSelection();
+    this.selectionSystem.initSelection();
     this.renderMode = mode;
     const targets = Object.values(Model).filter(s => typeof s === 'number');
     this.intersectableObjs.children.forEach(obj => {
@@ -339,74 +314,17 @@ export class World {
       -(clientY / clientHeight) * 2 + 1,
     )
   }
-  private restoreMaterial = () => {
-    if (this.target && this.tempMaterial) {
-      (this.target as Mesh).material = this.tempMaterial;
-    }
-  }
-  private selectMesh = (obj: Object3D) => {
-    this.target = obj;
-    this.tempMaterial = (this.target as Mesh).material as Material;
-    (this.target as Mesh).material = this.selectedMaterial;
-  }
-  private selectPoint = (point: Vector3) => {
-    this.selectedPoint.visible = true;
-    this.selectedPoint.position.copy(point);
-  }
-  private selectLine = () => {
-
-  }
-  private selectFace = (obj: Object3D, face?: Face | null) => {
-    if (!face) {
-      console.log('no face data');
-      return;
-    }
-    if (obj instanceof Mesh) {
-      const array = obj.geometry.attributes.position.array as Float32Array;
-      const { a, b, c } = face;
-      const step = 3;
-      const positions = [
-        array.at(a * step), array.at(a * step + 1), array.at(a * step + 2),
-        array.at(b * step), array.at(b * step + 1), array.at(b * step + 2),
-        array.at(c * step), array.at(c * step + 1), array.at(c * step + 2)
-      ] as number[]
-
-      // todo: reuse current face mesh
-      this.scene.remove(this.selectedFace);
-      this.selectedFace = new Mesh(new BufferGeometry(), this.selectedMaterial);
-      this.selectedFace.geometry.setAttribute('position', new BufferAttribute(new Float32Array([...positions]), 3));
-      this.selectedFace.applyMatrix4(obj.matrixWorld);
-      this.scene.add(this.selectedFace)
-    }
-  }
-  private initSelection = () => {
-    this.restoreMaterial();
-    this.selectedPoint.visible = false;
-    this.scene.remove(this.selectedFace); // todo: reuse current face mesh
-  }
-  private select = (intersection: Intersection) => {
-    this.initSelection();
-    switch (this.selectionMode) {
-      case Selection.MESH: { this.selectMesh(intersection.object); break; }
-      case Selection.POINT: { this.selectPoint(intersection.point); break; }
-      case Selection.LINE: { this.selectLine(); break; }
-      case Selection.FACE: { this.selectFace(intersection.object, intersection.face); break; }
-      default: {
-        console.log('something wrong');
-      }
-    }
-  }
   public click = () => {
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersection = this.raycaster.intersectObjects(this.intersectableObjs.children, true);
     if (!intersection.length) {
-      this.initSelection();
-      this.target = null;
+      this.selectionSystem.initSelection();
+      this.selectionSystem.target = null;
       return;
     }
     console.log(intersection)
     const [target] = intersection;
-    this.select(target);
+    this.selectionSystem.select(target);
   }
   public dispose = () => {
     cancelAnimationFrame(this.timer);
