@@ -1,8 +1,8 @@
 export enum Model {
-  ANIMATION,
-  GLB,
-  STL,
-  STP
+  ROBOT,
+  CHAIR,
+  GEAR,
+  WORKPIECE
 }
 
 export enum Selection {

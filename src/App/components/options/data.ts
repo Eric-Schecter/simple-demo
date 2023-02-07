@@ -7,14 +7,14 @@ export const options:Options = {
     settings: {
       'Robot': true,
       'Chair': false,
-      'Geer': false,
+      'Gear': false,
       'Workpiece': false
     },
     values: {
-      'Robot': Model.ANIMATION,
-      'Chair': Model.GLB,
-      'Geer': Model.STL,
-      'Workpiece': Model.STP,
+      'Robot': Model.ROBOT,
+      'Chair': Model.CHAIR,
+      'Gear': Model.GEAR,
+      'Workpiece': Model.WORKPIECE,
     },
   },
   selectionMode:{

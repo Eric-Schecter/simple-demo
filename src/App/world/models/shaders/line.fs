@@ -15,5 +15,6 @@ void main(){
   vec3 a3=smoothstep(vec3(0.),d*u_lineWidth,barycentric);
   // close to line color when change rate is small, and vice versa
   float alpha = mix(1.,0.,min(min(a3.x,a3.y),a3.z));
+
   gl_FragColor=vec4(u_lineColor,alpha);
 }

@@ -1,4 +1,3 @@
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { AnimationSystem } from './animationSystem';
 import { PhysicsSystem } from './physicsSystem';
@@ -6,7 +5,6 @@ import { PhysicsSystem } from './physicsSystem';
 export class InputSystem {
   private animationSystem?:AnimationSystem;
   private physicsSystem?:PhysicsSystem;
-  constructor(private control:OrbitControls){}
   public setup = (gltf:GLTF) =>{
     this.animationSystem = new AnimationSystem(gltf);
     this.physicsSystem = new PhysicsSystem(gltf.scene);

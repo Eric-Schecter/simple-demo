@@ -1,15 +1,7 @@
-import {
-  Mesh, Scene, WebGLRenderer, PlaneBufferGeometry,
-  MeshPhongMaterial, Group,
-  sRGBEncoding, Clock,
-} from 'three';
+import { Mesh, Scene, WebGLRenderer, PlaneBufferGeometry,MeshPhongMaterial, Group,sRGBEncoding, Clock} from 'three';
 import Stats from 'stats.js';
 import { Model, Render, Selection } from '../types';
-import { SelectionSystem } from './selectionSystem';
-import { LightSystem } from './lightSystem';
-import { CameraSystem } from './cameraSystem';
-import { LoaderSystem } from './loaderSystem';
-import { InputSystem } from './inputSystem';
+import { SelectionSystem,LightSystem,CameraSystem,LoaderSystem,InputSystem } from './systems';
 
 export class World {
   private scene: Scene;
@@ -44,8 +36,8 @@ export class World {
     this.cameraSystem = new CameraSystem(this.renderer, width, height);
     this.selectionSystem = new SelectionSystem(this.scene, this.cameraSystem.camera, this.intersectableObjs, this.renderer);
     this.lightSystem = new LightSystem(this.scene);
-    this.inputSystem = new InputSystem(this.cameraSystem.control);
-    this.loaderSystem = new LoaderSystem(this.intersectableObjs,this.selectionSystem,this.inputSystem);
+    this.inputSystem = new InputSystem();
+    this.loaderSystem = new LoaderSystem(this.intersectableObjs,this.selectionSystem);
 
     this.addStats(container);
   }
@@ -63,7 +55,7 @@ export class World {
     this.scene.add(plane);
   }
   public loadModel = (model: Model) => {
-    this.loaderSystem.loadModel(model);
+    this.loaderSystem.loadModel(model,this.inputSystem);
   }
   public changeSelectionMode = (mode: Selection) => {
     this.selectionSystem.selectionMode = mode;

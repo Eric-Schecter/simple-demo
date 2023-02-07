@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry, Camera, Face, Group, Intersection, Material, Mesh, MeshPhongMaterial,
    Object3D, Raycaster, Scene, SphereBufferGeometry, Vector2, Vector3, WebGLRenderer } from "three";
-import { Selection } from "../types";
+import { Selection } from "../../types";
 
 export class SelectionSystem {
   private selectedPoint: Mesh;
