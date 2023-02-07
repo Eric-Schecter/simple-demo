@@ -1,7 +1,7 @@
 import {
   Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera, TextureLoader, Color,
   MeshPhongMaterial, Vector2, Group, Raycaster, Object3D, Material, MeshStandardMaterial, BufferGeometry, BufferAttribute,
-  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, SphereBufferGeometry, Intersection, Face, Clock, 
+  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, SphereBufferGeometry, Intersection, Face, Clock,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
@@ -28,10 +28,10 @@ export class World {
   private selectedMaterial = new MeshPhongMaterial({ color: 0xff0000, transparent: true, opacity: 0.5 });
   private selectedPoint: Mesh;
   // private selectedLine:Mesh;
-  private selectedFace:Mesh;
+  private selectedFace: Mesh;
   private selectionMode: Selection = Selection.MESH;
   private renderMode: Render = Render.STD;
-  private inputSystem?:InputSystem;
+  private inputSystem?: InputSystem;
   private clock = new Clock();
   constructor(container: HTMLDivElement) {
     const { offsetWidth: width, offsetHeight: height } = container;
@@ -156,21 +156,22 @@ export class World {
       .catch(error => console.log(error))
       .finally(() => this.isLocked = false);
   }
-  private loadModelGLBwithAnimation = (url:string) =>{
+  private loadModelGLBwithAnimation = (url: string) => {
     this.gltfLoader.loadAsync(url)
-    .then(obj => {
-      obj.scene.traverse(o => {
-        o.castShadow = true;
-        o.receiveShadow = true;
-        this.setRenderMode(o);
+      .then(obj => {
+        obj.scene.traverse(o => {
+          o.castShadow = true;
+          o.receiveShadow = true;
+          this.setRenderMode(o);
+        })
+        this.rescale(obj.scene);
+        obj.scene.name = Model.ANIMATION.toString();
+        this.inputSystem?.dispose();
+        this.inputSystem = new InputSystem(obj, this.control);
+        this.intersectableObjs.add(obj.scene);
       })
-      this.rescale(obj.scene);
-      obj.scene.name = Model.GLB.toString();
-      this.inputSystem = new InputSystem(obj,this.control);
-      this.intersectableObjs.add(obj.scene);
-    })
-    .catch(error => console.log(error))
-    .finally(() => this.isLocked = false);
+      .catch(error => console.log(error))
+      .finally(() => this.isLocked = false);
 
   }
   private initObjs = () => {
@@ -196,9 +197,9 @@ export class World {
   //   this.scene.add(mesh);
   //   return mesh;
   // }
-  private initSelectionFace = () =>{
+  private initSelectionFace = () => {
     const geo = new BufferGeometry();
-    const mesh = new Mesh(geo,this.selectedMaterial);
+    const mesh = new Mesh(geo, this.selectedMaterial);
     mesh.visible = false;
     this.scene.add(mesh);
     return mesh;
@@ -230,7 +231,7 @@ export class World {
         obj.visible = false;
       } else {
         obj.visible = true;
-        obj.traverseVisible(o=>this.setRenderMode(o));
+        obj.traverseVisible(o => this.setRenderMode(o));
         res = true;
       }
     })
@@ -244,7 +245,7 @@ export class World {
     const res = this.clearScene(mode);
     if (!res) {
       switch (mode) {
-        case Model.ANIMATION:{ this.loadModelGLBwithAnimation('models/RobotExpressive/RobotExpressive.glb'); break; }
+        case Model.ANIMATION: { this.loadModelGLBwithAnimation('models/RobotExpressive/RobotExpressive.glb'); break; }
         case Model.GLB: { this.loadModelGLB('models/chair.glb'); break; }
         case Model.STL: { this.loadModelSTL('models/7-PMI.stl'); break; }
         case Model.STP: { this.loadModelSTP('models/1_7M.stp'); break; }
@@ -260,10 +261,10 @@ export class World {
   public changeRenderMode = (mode: Render) => {
     this.initSelection();
     this.renderMode = mode;
-    const targets = Object.values(Model).filter(s=>typeof s === 'number');
-    this.intersectableObjs.children.forEach(obj=>{
-      if(targets.includes(parseInt(obj.name))){
-        obj.traverseVisible(o=>this.setRenderMode(o));
+    const targets = Object.values(Model).filter(s => typeof s === 'number');
+    this.intersectableObjs.children.forEach(obj => {
+      if (targets.includes(parseInt(obj.name))) {
+        obj.traverseVisible(o => this.setRenderMode(o));
       }
     })
   }
@@ -298,25 +299,25 @@ export class World {
   private selectLine = () => {
 
   }
-  private selectFace = (obj:Object3D,face?: Face | null) => {
+  private selectFace = (obj: Object3D, face?: Face | null) => {
     if (!face) {
       console.log('no face data');
       return;
     }
-    if(obj instanceof Mesh){
+    if (obj instanceof Mesh) {
       const array = obj.geometry.attributes.position.array as Float32Array;
-      const {a,b,c} = face;
+      const { a, b, c } = face;
       const step = 3;
       const positions = [
-        array.at(a * step),array.at(a * step +1),array.at(a * step+2),
-        array.at(b * step),array.at(b * step+1),array.at(b * step+2),
-        array.at(c * step),array.at(c * step+1),array.at(c * step+2)
+        array.at(a * step), array.at(a * step + 1), array.at(a * step + 2),
+        array.at(b * step), array.at(b * step + 1), array.at(b * step + 2),
+        array.at(c * step), array.at(c * step + 1), array.at(c * step + 2)
       ] as number[]
 
       // todo: reuse current face mesh
       this.scene.remove(this.selectedFace);
-      this.selectedFace = new Mesh(new BufferGeometry(),this.selectedMaterial);
-      this.selectedFace.geometry.setAttribute('position',new BufferAttribute(new Float32Array([...positions]),3));
+      this.selectedFace = new Mesh(new BufferGeometry(), this.selectedMaterial);
+      this.selectedFace.geometry.setAttribute('position', new BufferAttribute(new Float32Array([...positions]), 3));
       this.selectedFace.applyMatrix4(obj.matrixWorld);
       this.scene.add(this.selectedFace)
     }
@@ -332,7 +333,7 @@ export class World {
       case Selection.MESH: { this.selectMesh(intersection.object); break; }
       case Selection.POINT: { this.selectPoint(intersection.point); break; }
       case Selection.LINE: { this.selectLine(); break; }
-      case Selection.FACE: { this.selectFace(intersection.object,intersection.face); break; }
+      case Selection.FACE: { this.selectFace(intersection.object, intersection.face); break; }
       default: {
         console.log('something wrong');
       }
