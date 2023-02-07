@@ -1,11 +1,10 @@
 import {
-  Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera,
+  Mesh, Scene, WebGLRenderer, PlaneBufferGeometry,
   MeshPhongMaterial, Group, Object3D, MeshStandardMaterial, BufferGeometry, BufferAttribute,
   Box3, Vector3, sRGBEncoding, Clock, ShaderMaterial, Color,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as occtimportjs from 'occt-import-js';
 import Stats from 'stats.js';
 import { Model, Render, Selection } from '../types';
@@ -14,16 +13,15 @@ import vertexShader from './shaders/line.vs';
 import fragmentShader from './shaders/line.fs';
 import { SelectionSystem } from './selectionSystem';
 import { LightSystem } from './lightSystem';
+import { CameraSystem } from './cameraSystem';
 
 export class World {
   private scene: Scene;
   private intersectableObjs: Group;
-  private camera: PerspectiveCamera;
   private timer = 0;
   private renderer: WebGLRenderer;
   private gltfLoader = new GLTFLoader();
   private stlLoader = new STLLoader();
-  private control: OrbitControls;
   private isLocked = false;
   private renderMode: Render = Render.STD;
   private inputSystem?: InputSystem;
@@ -31,6 +29,7 @@ export class World {
   private stats = new Stats();
   private selectionSystem: SelectionSystem;
   private lightSystem: LightSystem;
+  private cameraSystem:CameraSystem;
   constructor(container: HTMLDivElement) {
     const { offsetWidth: width, offsetHeight: height } = container;
     this.renderer = new WebGLRenderer({
@@ -43,15 +42,14 @@ export class World {
     this.renderer.setSize(width, height);
     this.renderer.setClearColor('black')
     container.append(this.renderer.domElement);
+
     this.scene = new Scene();
     this.intersectableObjs = new Group();
     this.scene.add(this.intersectableObjs);
-
-    this.camera = this.initCamera(width / height);
-    this.control = this.initControl();
     this.initObjs();
 
-    this.selectionSystem = new SelectionSystem(this.scene,this.camera,this.intersectableObjs,this.renderer);
+    this.cameraSystem = new CameraSystem(this.renderer,width,height);
+    this.selectionSystem = new SelectionSystem(this.scene,this.cameraSystem.camera,this.intersectableObjs,this.renderer);
     this.lightSystem = new LightSystem(this.scene);
 
     this.addStats(container);
@@ -60,19 +58,6 @@ export class World {
     this.stats = new Stats();
     this.stats.showPanel(0);
     container.appendChild(this.stats.dom);
-  }
-  private initControl = () => {
-    const control = new OrbitControls(this.camera, this.renderer.domElement);
-    control.maxDistance = 50;
-    control.minDistance = 0.1;
-    control.enableDamping = true;
-    control.target.set(0, 0.5, 0);
-    return control;
-  }
-  private initCamera = (aspect: number) => {
-    const camera = new PerspectiveCamera(50, aspect, 0.1, 1000);
-    camera.position.set(0, 2, 4);
-    return camera;
   }
   private rescale = (group: Group | Mesh) => {
     const boudingBox = new Box3();
@@ -220,7 +205,7 @@ export class World {
         this.rescale(obj.scene);
         obj.scene.name = Model.ANIMATION.toString();
         this.inputSystem?.dispose();
-        this.inputSystem = new InputSystem(obj, this.control);
+        this.inputSystem = new InputSystem(obj, this.cameraSystem.control);
         this.intersectableObjs.add(obj.scene);
       })
       .catch(error => console.log(error))
@@ -280,9 +265,9 @@ export class World {
   }
   public draw = () => {
     this.stats.begin();
-    this.control.update();
+    this.cameraSystem.control.update();
     this.inputSystem?.update(this.clock.getDelta());
-    this.renderer.render(this.scene, this.camera);
+    this.renderer.render(this.scene, this.cameraSystem.camera);
     this.timer = requestAnimationFrame(this.draw);
     this.stats.end();
   }
