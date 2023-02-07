@@ -1,18 +1,19 @@
 import {
   Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera,
   MeshPhongMaterial, Vector2, Group, Raycaster, Object3D, MeshStandardMaterial, BufferGeometry, BufferAttribute,
-  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, Clock, ShaderMaterial, Color,
+  Box3, Vector3, sRGBEncoding, Clock, ShaderMaterial, Color,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as occtimportjs from 'occt-import-js';
+import Stats from 'stats.js';
 import { Model, Render, Selection } from '../types';
 import { InputSystem } from './inputSystem';
 import vertexShader from './shaders/line.vs';
 import fragmentShader from './shaders/line.fs';
-import {SelectionSystem} from './selectionSystem';
-import Stats from 'stats.js';
+import { SelectionSystem } from './selectionSystem';
+import { LightSystem } from './lightSystem';
 
 export class World {
   private scene: Scene;
@@ -30,7 +31,8 @@ export class World {
   private inputSystem?: InputSystem;
   private clock = new Clock();
   private stats = new Stats();
-  private selectionSystem:SelectionSystem;
+  private selectionSystem: SelectionSystem;
+  private lightSystem: LightSystem;
   constructor(container: HTMLDivElement) {
     const { offsetWidth: width, offsetHeight: height } = container;
     this.renderer = new WebGLRenderer({
@@ -49,14 +51,14 @@ export class World {
 
     this.camera = this.initCamera(width / height);
     this.control = this.initControl();
-    this.initLights();
     this.initObjs();
 
     this.selectionSystem = new SelectionSystem(this.scene);
+    this.lightSystem = new LightSystem(this.scene);
 
     this.addStats(container);
   }
-  private addStats = (container:HTMLDivElement) =>{
+  private addStats = (container: HTMLDivElement) => {
     this.stats = new Stats();
     this.stats.showPanel(0);
     container.appendChild(this.stats.dom);
@@ -97,8 +99,8 @@ export class World {
         }
         default: { }
       }
-    }else if(o instanceof Mesh && o.material instanceof ShaderMaterial && this.renderMode === Render.WIREShader){
-      
+    } else if (o instanceof Mesh && o.material instanceof ShaderMaterial && this.renderMode === Render.WIREShader) {
+
     }
   }
   private loadModelSTP = (url: string) => {
@@ -233,26 +235,6 @@ export class World {
     plane.rotateX(-Math.PI / 2);
     plane.receiveShadow = true;
     this.scene.add(plane);
-  }
-  private initSpotLight = (x: number, y: number, z: number, intensity: number) => {
-    const light = new SpotLight('white', intensity);
-    light.penumbra = 1;
-    light.position.set(x, y, z);
-    light.lookAt(0, 0, 0);
-    light.shadow.mapSize = new Vector2(1024, 1024);
-    light.castShadow = true;
-    return light;
-  }
-  // https://vimeo.com/blog/post/your-quick-and-dirty-guide-to-3-point-lighting
-  private initLights = () => {
-    const lights = new Group();
-    const dis = 4;
-    const keyLight = this.initSpotLight(-dis, dis, dis, 1);
-    const fillLight = this.initSpotLight(dis, dis, dis, 0.5);
-    const backLight = this.initSpotLight(-dis, dis, -dis, 0.2);
-    const ambientLight = new AmbientLight('white', 0.1);
-    lights.add(ambientLight, keyLight, fillLight, backLight);
-    this.scene.add(lights);
   }
   private clearScene = (mode: Model) => {
     let res = false;
