@@ -4,16 +4,19 @@ import { AnimationSystem } from './animationSystem';
 import { PhysicsSystem } from './physicsSystem';
 
 export class InputSystem {
-  private animationSystem:AnimationSystem;
-  private physicsSystem:PhysicsSystem;
-  constructor(gltf:GLTF,private control:OrbitControls){
+  private animationSystem?:AnimationSystem;
+  private physicsSystem?:PhysicsSystem;
+  constructor(private control:OrbitControls){}
+  public setup = (gltf:GLTF) =>{
     this.animationSystem = new AnimationSystem(gltf);
     this.physicsSystem = new PhysicsSystem(gltf.scene);
-
     window.addEventListener('keydown',this.keydown);
     window.addEventListener('keyup',this.keyup);
   }
   private keyup = (e:KeyboardEvent)=>{
+    if(!this.animationSystem || !this.physicsSystem){
+      return;
+    }
     if(e.key==='k'){
       this.physicsSystem.force = 0.005;
       this.animationSystem.isRunmode = false; 
@@ -22,16 +25,22 @@ export class InputSystem {
     }
   }
   private keydown = (e:KeyboardEvent) =>{
+    if(!this.animationSystem || !this.physicsSystem){
+      return;
+    }
     if(e.key==='k'){
       this.physicsSystem.force = 0.01;
       this.animationSystem.isRunmode = true; 
-    }else if(e.key!==this.physicsSystem.currentKey){
+    }else if(e.key!==this.physicsSystem?.currentKey){
       this.physicsSystem.register(e.key);
     }
   }
   public update = (time:number) =>{
-    this.physicsSystem.update();
-    this.animationSystem.update(time,this.physicsSystem.currentKey,this.physicsSystem.velocity.lengthSq());
+    if(!this.animationSystem || !this.physicsSystem){
+      return;
+    }
+    this.physicsSystem?.update();
+    this.animationSystem?.update(time,this.physicsSystem.currentKey,this.physicsSystem.velocity.lengthSq());
   }
   public dispose = () =>{
     window.removeEventListener('keydown',this.keydown);

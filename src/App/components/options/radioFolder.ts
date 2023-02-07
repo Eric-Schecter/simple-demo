@@ -23,7 +23,10 @@ export class RadioFolder {
       .name(key)
       .listen()
       .onChange((value: boolean) => {
-        if (!value) { return; }
+        if (!value) {  // prevent self click to false
+          options.settings[key] = true;
+          return; 
+        }
         this.disableOthers(options.settings, key);
         cb(options.values[key]);
       });
