@@ -37,7 +37,7 @@ export const options:Options = {
     settings: {
       'Standard': true,
       'Wireframe': false,
-      // 'Wireframe+Shader': false,
+      'Wireframe+Shader': false,
     },
     values: {
       'Standard': Render.STD,

@@ -37,21 +37,31 @@ export class LoaderSystem {
     })
     return res;
   }
+  // just consider standard material and shader material for now
   private setRenderMode = (o: Object3D) => {
     if (o instanceof Mesh && o.material instanceof MeshStandardMaterial) {
-      switch (this.renderMode) {
-        case Render.STD: {
-          o.material.wireframe = false;
-          break;
+      if(this.renderMode === Render.WIREShader){
+        o.visible = false;
+      }else{
+        o.visible = true;
+        switch (this.renderMode) {
+          case Render.STD: {
+            o.material.wireframe = false;
+            break;
+          }
+          case Render.WIRE: {
+            o.material.wireframe = true;
+            break;
+          }
+          default: { }
         }
-        case Render.WIRE: {
-          o.material.wireframe = true;
-          break;
-        }
-        default: { }
       }
-    } else if (o instanceof Mesh && o.material instanceof ShaderMaterial && this.renderMode === Render.WIREShader) {
-
+    } else if (o instanceof Mesh && o.material instanceof ShaderMaterial) {
+      if(this.renderMode === Render.WIREShader){
+        o.visible = true;
+      }else{
+        o.visible = false;
+      }
     }
   }
   public loadSTP = (url: string) => {
@@ -114,13 +124,14 @@ export class LoaderSystem {
         })
         const mesh = new Mesh(geometry, material);
         mesh.castShadow = true;
+        mesh.visible = false;
         return mesh;
       })
       const customshaderGroup = new Group();
       customshaderGroup.add(...customshaderMeshes);
 
       const group = new Group();
-      group.add(standardGroup);
+      group.add(standardGroup,customshaderGroup);
       const vec = this.rescale(group);
       group.translateY(vec.y);
       group.translateX(-vec.z);
@@ -185,7 +196,7 @@ export class LoaderSystem {
     const targets = Object.values(Model).filter(s => typeof s === 'number');
     this.intersectableObjs.children.forEach(obj => {
       if (targets.includes(parseInt(obj.name))) {
-        obj.traverseVisible(o => this.setRenderMode(o));
+        obj.traverse(o => this.setRenderMode(o));
       }
     })
   }
