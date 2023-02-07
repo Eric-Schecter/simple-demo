@@ -1,7 +1,7 @@
 import {
-  Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera, TextureLoader, Color,
+  Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera, TextureLoader,
   MeshPhongMaterial, Vector2, Group, Raycaster, Object3D, Material, MeshStandardMaterial, BufferGeometry, BufferAttribute,
-  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, SphereBufferGeometry, Intersection, Face, Clock,
+  Box3, Vector3, AmbientLight, SpotLight, sRGBEncoding, SphereBufferGeometry, Intersection, Face, Clock, ShaderMaterial, Color,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
@@ -9,6 +9,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as occtimportjs from 'occt-import-js';
 import { Model, Render, Selection } from '../types';
 import { InputSystem } from './inputSystem';
+import vertexShader from './shaders/line.vs';
+import fragmentShader from './shaders/line.fs';
+import Stats from 'stats.js';
 
 export class World {
   private scene: Scene;
@@ -33,11 +36,12 @@ export class World {
   private renderMode: Render = Render.STD;
   private inputSystem?: InputSystem;
   private clock = new Clock();
+  private stats = new Stats();
   constructor(container: HTMLDivElement) {
     const { offsetWidth: width, offsetHeight: height } = container;
     this.renderer = new WebGLRenderer({
       antialias: true,
-      logarithmicDepthBuffer: true
+      // logarithmicDepthBuffer: true // not work with shaderMaterial
     });
     this.renderer.shadowMap.enabled = true;
     this.renderer.outputEncoding = sRGBEncoding;
@@ -56,6 +60,13 @@ export class World {
     this.selectedPoint = this.initSelectionPoint();
     // this.selectedLine = this.initSelectionLine();
     this.selectedFace = this.initSelectionFace();
+
+    this.addStats(container);
+  }
+  private addStats = (container:HTMLDivElement) =>{
+    this.stats = new Stats();
+    this.stats.showPanel(0);
+    container.appendChild(this.stats.dom);
   }
   private initControl = () => {
     const control = new OrbitControls(this.camera, this.renderer.domElement);
@@ -112,6 +123,50 @@ export class World {
         mesh.castShadow = true;
         this.setRenderMode(mesh);
         return mesh;
+
+        // const geometry = new BufferGeometry();
+        // const nonIndexed: {
+        //   position: number[],
+        //   normal: number[],
+        //   barycentric: number[],
+        // } = {
+        //   position: [],
+        //   normal: [],
+        //   barycentric: [],
+        // }
+        // const positionArray = data.attributes.position.array;
+        // const normalArray = data.attributes.normal.array;
+        // for (let i = 0; i < data.index.array.length; i++) {
+        //   const index = data.index.array[i];
+        //   nonIndexed.position.push(positionArray[index * 3], positionArray[index * 3 + 1], positionArray[index * 3 + 2]);
+        //   nonIndexed.normal.push(normalArray[index * 3], normalArray[index * 3 + 1], normalArray[index * 3 + 2]);
+        // }
+        // let i = 0;
+        // let k = 0;
+        // while (i < nonIndexed.position.length) {
+        //   nonIndexed.barycentric.push(k % 3 === 0 ? 1 : 0, k % 3 === 1 ? 1 : 0, k % 3 === 2 ? 1 : 0);
+        //   i += 3;
+        //   k++;
+        // }
+        // geometry.setAttribute('position', new BufferAttribute(new Float32Array(nonIndexed.position), 3));
+        // geometry.setAttribute('normal', new BufferAttribute(new Float32Array(nonIndexed.normal), 3));
+        // geometry.setAttribute('barycentric', new BufferAttribute(new Float32Array(nonIndexed.barycentric), 3));
+        // // geometry.setIndex(new BufferAttribute(new Uint16Array(data.index.array), 1));
+        // // const material = new MeshStandardMaterial({ color: new Color(data.color[0], data.color[1], data.color[2]) });
+        // const material = new ShaderMaterial({
+        //   vertexShader,
+        //   fragmentShader,
+        //   uniforms: {
+        //     u_lineColor: { value: new Vector3(data.color[0], data.color[1], data.color[2]) },
+        //     u_lineWidth: { value: 1 },
+        //   },
+        //   depthTest: true,
+        //   transparent: true,
+        // })
+        // const mesh = new Mesh(geometry, material);
+        // mesh.castShadow = true;
+        // // this.setRenderMode(mesh);
+        // return mesh;
       })
       const group = new Group();
       group.add(...meshes);
@@ -269,10 +324,12 @@ export class World {
     })
   }
   public draw = () => {
+    this.stats.begin();
     this.control.update();
     this.inputSystem?.update(this.clock.getDelta());
     this.renderer.render(this.scene, this.camera);
     this.timer = requestAnimationFrame(this.draw);
+    this.stats.end();
   }
   public mousemove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { clientX, clientY } = e;

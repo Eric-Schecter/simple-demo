@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "dat.gui": "^0.7.9",
     "glsl-noise": "^0.0.0",
     "occt-import-js": "^0.0.15",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-scripts": "^4.0.3",
+    "stats.js": "^0.17.0",
     "three": "^0.126.1",
     "typescript": "^3.7.5"
   },
@@ -33,8 +35,10 @@
     ]
   },
   "devDependencies": {
+    "@types/dat.gui": "^0.7.7",
     "@types/react": "^16.9.45",
     "@types/react-dom": "^16.9.8",
+    "@types/stats.js": "^0.17.0",
     "@types/three": "^0.126.2",
     "glslify": "^7.1.1",
     "glslify-loader": "^2.0.0",

@@ -1,27 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Options } from './components/options';
+import { Options } from './components/options/gui';
 import styles from './index.module.scss';
-import { Model, Render, Selection } from './types';
 import { World } from './world';
 
-const optionsModel = [
-  { id: Model.ANIMATION, name: 'GLB+A' },
-  { id: Model.GLB, name: 'GLB' },
-  { id: Model.STL, name: 'STL' },
-  { id: Model.STP, name: 'STP' }
-];
-
-const optionsSelection = [
-  { id: Selection.MESH, name: 'MESH' },
-  { id: Selection.FACE, name: 'FACE' },
-  { id: Selection.LINE, name: 'LINE' },
-  { id: Selection.POINT, name: 'POINT' }
-];
-
-const optionsRender = [
-  { id: Render.STD, name: 'STD' },
-  { id: Render.WIRE, name: 'WIRE' },
-];
 
 export const App = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -47,20 +28,6 @@ export const App = () => {
       onClick={() => world?.click()}
       onMouseMove={e => world?.mousemove(e)}
     />
-    <Options
-      cb={(id: number) => world?.loadModel(id)}
-      customStyles={styles.optionsModel}
-      options={optionsModel}
-    />
-    <Options
-      cb={(id: number) => world?.changeSelectionMode(id)}
-      customStyles={styles.optionsSelectionMode}
-      options={optionsSelection}
-    />
-    <Options
-      cb={(id: number) => world?.changeRenderMode(id)}
-      customStyles={styles.optionsRenderMode}
-      options={optionsRender}
-    />
+    <Options containerRef={ref} world={world}/>
   </div>
 }

@@ -15,4 +15,5 @@ export enum Selection {
 export enum Render {
   STD,
   WIRE,
+  WIREShader,
 }
