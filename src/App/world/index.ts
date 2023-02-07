@@ -1,6 +1,6 @@
 import {
   Mesh, Scene, WebGLRenderer, PlaneBufferGeometry, PerspectiveCamera,
-  MeshPhongMaterial, Vector2, Group, Raycaster, Object3D, MeshStandardMaterial, BufferGeometry, BufferAttribute,
+  MeshPhongMaterial, Group, Object3D, MeshStandardMaterial, BufferGeometry, BufferAttribute,
   Box3, Vector3, sRGBEncoding, Clock, ShaderMaterial, Color,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -24,8 +24,6 @@ export class World {
   private gltfLoader = new GLTFLoader();
   private stlLoader = new STLLoader();
   private control: OrbitControls;
-  private raycaster = new Raycaster();
-  private mouse = new Vector2();
   private isLocked = false;
   private renderMode: Render = Render.STD;
   private inputSystem?: InputSystem;
@@ -53,7 +51,7 @@ export class World {
     this.control = this.initControl();
     this.initObjs();
 
-    this.selectionSystem = new SelectionSystem(this.scene);
+    this.selectionSystem = new SelectionSystem(this.scene,this.camera,this.intersectableObjs,this.renderer);
     this.lightSystem = new LightSystem(this.scene);
 
     this.addStats(container);
@@ -289,24 +287,10 @@ export class World {
     this.stats.end();
   }
   public mousemove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const { clientX, clientY } = e;
-    const { clientWidth, clientHeight } = this.renderer.domElement;
-    this.mouse.set(
-      (clientX / clientWidth) * 2 - 1,
-      -(clientY / clientHeight) * 2 + 1,
-    )
+    this.selectionSystem.mousemove(e);
   }
   public click = () => {
-    this.raycaster.setFromCamera(this.mouse, this.camera);
-    const intersection = this.raycaster.intersectObjects(this.intersectableObjs.children, true);
-    if (!intersection.length) {
-      this.selectionSystem.initSelection();
-      this.selectionSystem.target = null;
-      return;
-    }
-    console.log(intersection)
-    const [target] = intersection;
-    this.selectionSystem.select(target);
+    this.selectionSystem.click();
   }
   public dispose = () => {
     cancelAnimationFrame(this.timer);

@@ -1,4 +1,5 @@
-import { BufferAttribute, BufferGeometry, Face, Intersection, Material, Mesh, MeshPhongMaterial, Object3D, Scene, SphereBufferGeometry, Vector3 } from "three";
+import { BufferAttribute, BufferGeometry, Camera, Face, Group, Intersection, Material, Mesh, MeshPhongMaterial,
+   Object3D, Raycaster, Scene, SphereBufferGeometry, Vector2, Vector3, WebGLRenderer } from "three";
 import { Selection } from "../types";
 
 export class SelectionSystem {
@@ -9,7 +10,9 @@ export class SelectionSystem {
   private tempMaterial: Material | null = null;
   public target: Object3D | null = null;
   public selectionMode: Selection = Selection.MESH;
-  constructor(private scene:Scene){
+  private raycaster = new Raycaster();
+  private mouse = new Vector2();
+  constructor(private scene:Scene,private camera:Camera,private intersectableObjs: Group,private renderer:WebGLRenderer){
     this.selectedPoint = this.initSelectionPoint();
     // this.selectedLine = this.initSelectionLine();
     this.selectedFace = this.initSelectionFace();
@@ -92,5 +95,24 @@ export class SelectionSystem {
         console.log('something wrong');
       }
     }
+  }
+  public click = () => {
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersection = this.raycaster.intersectObjects(this.intersectableObjs.children, true);
+    if (!intersection.length) {
+      this.initSelection();
+      this.target = null;
+      return;
+    }
+    const [target] = intersection;
+    this.select(target);
+  }
+  public mousemove = (e: React.MouseEvent<HTMLDivElement>) =>{
+    const { clientX, clientY } = e;
+    const { clientWidth, clientHeight } = this.renderer.domElement;
+    this.mouse.set(
+      (clientX / clientWidth) * 2 - 1,
+      -(clientY / clientHeight) * 2 + 1,
+    )
   }
 }
