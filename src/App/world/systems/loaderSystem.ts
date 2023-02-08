@@ -86,7 +86,8 @@ export class LoaderSystem {
           new Workpiece(
             'models/1_7M.stp',
             this.intersectableObjs,
-            this.setRenderMode
+            this.setRenderMode,
+            this.renderMode
           ); 
           break; 
         }

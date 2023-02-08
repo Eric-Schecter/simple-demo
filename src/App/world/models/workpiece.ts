@@ -2,11 +2,11 @@ import * as occtimportjs from 'occt-import-js';
 import vertexShader from './shaders/line.vs';
 import fragmentShader from './shaders/line.fs';
 import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial, Object3D, ShaderMaterial, Vector3 } from 'three';
-import { Model } from '../../types';
+import { Model, Render } from '../../types';
 import { Instance } from './instance';
 
 export class Workpiece extends Instance {
-  constructor(url: string, intersectableObjs: Group, cb: (obj: Object3D) => void) {
+  constructor(url: string, intersectableObjs: Group, cb: (obj: Object3D) => void,renderMode:Render) {
     super();
     occtimportjs()
       .then(async (occt: any) => {
@@ -65,16 +65,25 @@ export class Workpiece extends Instance {
               u_lineWidth: { value: 1 },
             },
             depthTest: true,
+            depthWrite: false,
             transparent: true,
           })
           const mesh = new Mesh(geometry, material);
           mesh.castShadow = true;
-          cb(mesh);
+
           return mesh;
         })
         const customshaderGroup = new Group();
         customshaderGroup.name = 'custom';
         customshaderGroup.add(...customshaderMeshes);
+
+        if(renderMode === Render.WIREShader){
+          customshaderGroup.visible = true;
+          standardGroup.visible = false;
+        }else{
+          customshaderGroup.visible = false;
+          standardGroup.visible = true;
+        }
 
         const group = new Group();
         group.add(standardGroup, customshaderGroup);
