@@ -1,4 +1,4 @@
-import { Group, Mesh, MeshStandardMaterial, Object3D, ShaderMaterial } from "three";
+import { Group, Mesh, MeshStandardMaterial, Object3D } from "three";
 import { Model, Render } from "../../types";
 import { SelectionSystem } from "./selectionSystem";
 import { Robot,Chair,Gear,Workpiece } from "../models";
@@ -23,27 +23,16 @@ export class LoaderSystem {
   // just consider standard material and shader material for now
   private setRenderMode = (o: Object3D) => {
     if (o instanceof Mesh && o.material instanceof MeshStandardMaterial) {
-      if(this.renderMode === Render.WIREShader){
-        o.visible = false;
-      }else{
-        o.visible = true;
-        switch (this.renderMode) {
-          case Render.STD: {
-            o.material.wireframe = false;
-            break;
-          }
-          case Render.WIRE: {
-            o.material.wireframe = true;
-            break;
-          }
-          default: { }
+      switch (this.renderMode) {
+        case Render.STD: {
+          o.material.wireframe = false;
+          break;
         }
-      }
-    } else if (o instanceof Mesh && o.material instanceof ShaderMaterial) {
-      if(this.renderMode === Render.WIREShader){
-        o.visible = true;
-      }else{
-        o.visible = false;
+        case Render.WIRE: {
+          o.material.wireframe = true;
+          break;
+        }
+        default: { }
       }
     }
   }
@@ -54,6 +43,13 @@ export class LoaderSystem {
     this.intersectableObjs.children.forEach(obj => {
       if (targets.includes(parseInt(obj.name))) {
         obj.traverse(o => this.setRenderMode(o));
+        if(parseInt(obj.name)===Model.WORKPIECE){
+           obj.children.forEach(child=>{
+            const customCase = child.name==='custom' && this.renderMode === Render.WIREShader;
+            const standardCase = child.name === 'standard' && this.renderMode!==Render.WIREShader;
+            child.visible = customCase || standardCase;
+           })
+        }
       }
     })
   }
