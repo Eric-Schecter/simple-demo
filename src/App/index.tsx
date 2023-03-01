@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Options } from './components/options/gui';
+// import { Options } from './components/options/gui';
 import styles from './index.module.scss';
+import { Model } from './types';
 import { World } from './world';
 
 
@@ -17,6 +18,7 @@ export const App = () => {
     if (!world) {
       return;
     }
+    world.loadModel(Model.ROBOT);
     world.draw();
     return () => world.dispose();
   }, [world])
@@ -28,6 +30,7 @@ export const App = () => {
       onClick={() => world?.click()}
       onMouseMove={e => world?.mousemove(e)}
     />
-    <Options containerRef={ref} world={world}/>
+    <img alt='title' src='img/title.png' className={styles.title} />
+    {/* <Options containerRef={ref} world={world}/> */}
   </div>
 }

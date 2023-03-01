@@ -39,7 +39,7 @@ export class World {
     this.inputSystem = new InputSystem();
     this.loaderSystem = new LoaderSystem(this.intersectableObjs,this.selectionSystem);
 
-    this.addStats(container);
+    // this.addStats(container);
   }
   private addStats = (container: HTMLDivElement) => {
     this.stats = new Stats();
@@ -64,12 +64,12 @@ export class World {
     this.loaderSystem.changeRenderMode(mode);
   }
   public draw = () => {
-    this.stats.begin();
+    // this.stats.begin();
     this.cameraSystem.control.update();
     this.inputSystem?.update(this.clock.getDelta());
     this.renderer.render(this.scene, this.cameraSystem.camera);
     this.timer = requestAnimationFrame(this.draw);
-    this.stats.end();
+    // this.stats.end();
   }
   public mousemove = (e: React.MouseEvent<HTMLDivElement>) => {
     this.selectionSystem.mousemove(e);
