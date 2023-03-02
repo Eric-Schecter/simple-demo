@@ -31,6 +31,7 @@ export const App = () => {
       onMouseMove={e => world?.mousemove(e)}
     />
     <img alt='title' src='img/title.png' className={styles.title} />
+    <img alt='navigator' src='img/navigator.png' className={styles.navigator} />
     {/* <Options containerRef={ref} world={world}/> */}
   </div>
 }
